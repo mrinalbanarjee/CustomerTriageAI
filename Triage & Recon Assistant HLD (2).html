@@ -1,0 +1,374 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Triage &amp; Recon Assistant HLD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: short masthead, one wide system figure, then step-by-step notes and two reference tables. */
+:root {
+  --bg: #F3F5F7; --surface: #FFFFFF; --panel: #E8EDF1; --rule: #CCD5DD;
+  --fg: #16202A; --muted: #536070; --line: #8491A0; --edge: #3A4654;
+  --accent: #0A7570; --accent-soft: #DCEFED; --on-accent: #FFFFFF;
+  --future: #6447C9; --future-soft: #EFEAFC; --on-future: #FFFFFF;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E141A; --surface: #17212B; --panel: #121A22; --rule: #2A3643;
+    --fg: #E4EBF2; --muted: #9AA8B6; --line: #627181; --edge: #B9C5D1;
+    --accent: #3BBFB4; --accent-soft: #0F2F2C; --on-accent: #05201E;
+    --future: #A794FF; --future-soft: #1E1938; --on-future: #150F31;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+    --bg: #0E141A; --surface: #17212B; --panel: #121A22; --rule: #2A3643;
+    --fg: #E4EBF2; --muted: #9AA8B6; --line: #627181; --edge: #B9C5D1;
+    --accent: #3BBFB4; --accent-soft: #0F2F2C; --on-accent: #05201E;
+    --future: #A794FF; --future-soft: #1E1938; --on-future: #150F31;
+    color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); font-size: 15px; line-height: 1.55; }
+.page { max-width: 1272px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 32px); padding-block: 20px 64px; }
+
+/* the page opens on the diagram; its heading is kept for screen readers only */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* figure */
+.hld { margin: 0; }
+.scroll { overflow-x: auto; border-bottom: 1px solid var(--rule); padding-block: 4px 18px; }
+.scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scroll .hld-svg { display: block; width: 100%; min-width: 980px; height: auto; }
+.hint { display: none; margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
+figcaption { max-width: 82ch; margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+@media (max-width: 760px) { .hint { display: block; } }
+
+/* diagram marks */
+svg text { font-family: var(--font-cond); }
+.d-panel { fill: var(--panel); stroke: var(--rule); stroke-width: 1; }
+.d-sec { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.d-box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+.d-fut { fill: var(--future-soft); stroke: var(--future); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.d-human { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
+.d-chip { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.d-chip-f { fill: var(--future-soft); stroke: var(--future); stroke-width: 1; stroke-dasharray: 3 3; }
+.d-edge { fill: none; stroke: var(--edge); stroke-width: 1.4; }
+.d-edge-f { fill: none; stroke: var(--future); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.d-head { fill: var(--edge); }
+.d-head-f { fill: var(--future); }
+.d-badge { fill: var(--accent); }
+.d-badge-f { fill: var(--future); }
+.d-bullet { fill: var(--line); }
+.d-bullet-f { fill: var(--future-soft); stroke: var(--future); stroke-width: 1; }
+.t-h { fill: var(--fg); font-size: 13px; font-weight: 600; }
+.t-h2 { fill: var(--fg); font-size: 14.5px; font-weight: 600; }
+.t-s { fill: var(--muted); font-size: 11px; }
+.t-s2 { fill: var(--fg); font-size: 11px; font-weight: 500; }
+.t-hf { fill: var(--future); font-size: 13px; font-weight: 600; }
+.t-sf { fill: var(--future); font-size: 11px; }
+.t-e { fill: var(--muted); font-size: 11px; }
+.t-ef { fill: var(--future); font-size: 11px; }
+.t-k { fill: var(--muted); font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .06em; }
+.t-lane { fill: var(--muted); font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: .1em; }
+.t-chip { fill: var(--fg); font-size: 11px; font-weight: 500; }
+.t-chip-f { fill: var(--future); font-size: 11px; font-weight: 500; }
+.t-badge, .t-badge-f { font-family: var(--font-sans); font-size: 11px; font-weight: 600; }
+.t-badge { fill: var(--on-accent); }
+.t-badge-f { fill: var(--on-future); }
+
+/* sections */
+section { margin-top: 46px; }
+h2 { font-size: 20px; font-weight: 600; letter-spacing: -.005em; margin: 0 0 6px; text-wrap: balance; }
+.sub { margin: 0 0 18px; font-size: 14px; color: var(--muted); max-width: 70ch; }
+
+.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 22px 32px; }
+.steps li { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-content: start; padding-top: 14px; border-top: 1px solid var(--rule); }
+.num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.num.f { background: var(--future); color: var(--on-future); }
+.steps h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 1px 0 6px; font-size: 15.5px; font-weight: 600; }
+.steps p { margin: 0; font-size: 14.5px; }
+.steps p + p { margin-top: 8px; }
+.fut { color: var(--future); }
+.fut b { font-weight: 600; }
+
+.chip { display: inline-block; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.chip.f { border-style: dashed; border-color: var(--future); background: var(--future-soft); color: var(--future); }
+
+.ref { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 0 40px; }
+.ref section { min-width: 0; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { padding: 0 14px 8px 0; border-bottom: 1px solid var(--line); text-align: left; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td.f { color: var(--future); }
+td.none { color: var(--muted); }
+td code { display: block; margin-top: 3px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+td code.inline { display: inline; margin: 0; }
+.note { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+</style>
+
+<main class="page">
+  <h1 class="sr-only">Triage &amp; Recon Assistant high-level design</h1>
+
+  <figure class="hld">
+    <div class="scroll" tabindex="0" aria-label="System diagram, scrolls sideways on small screens">
+<svg class="hld-svg" viewBox="0 0 1240 966" role="img" aria-label="The background service pulls Splunk alerts and audit-table records keyed by account number, ECN or third-party ID. It and the web UI&#x27;s triage chatbot run the same LLM triage (vector DB classification, the component runbook against audit tables, Splunk log search planned) and write triage records with remediation actions to MongoDB. The Triage &amp; Recon Assistant web UI has three features: Reconciliation, with options for each L2 that open recon apps; the Triage chatbot, for each L2 and today only Auto Loan Admin; and Triage records. On every triage record, from either triage feature, a person can test an action in a lower environment through the remediation API and test runner, and in future deploy it to production through the IDP portal and a ServiceNow change." xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="hld-he" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0.5 L10,5 L0,9.5 Z" class="d-head"/></marker><marker id="hld-hs" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M10,0.5 L0,5 L10,9.5 Z" class="d-head"/></marker><marker id="hld-he-f" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0.5 L10,5 L0,9.5 Z" class="d-head-f"/></marker><marker id="hld-hs-f" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M10,0.5 L0,5 L10,9.5 Z" class="d-head-f"/></marker></defs>
+<text x="904" y="50" class="t-k">KEY</text>
+<rect x="904" y="63" width="28" height="18" rx="3" class="d-box"/>
+<text x="940" y="76" class="t-s2">Current</text>
+<rect x="1064" y="63" width="28" height="18" rx="3" class="d-fut"/>
+<text x="1100" y="76" class="t-s2">Future</text>
+<path d="M911,99 V109 A7,3 0 0 0 925,109 V99 A7,3 0 0 0 911,99 Z" class="d-box"/>
+<ellipse cx="918" cy="99" rx="7" ry="3" class="d-box"/>
+<text x="940" y="108" class="t-s2">Data store</text>
+<rect x="1064" y="95" width="28" height="18" rx="3" class="d-human"/>
+<text x="1100" y="108" class="t-s2">Person’s action</text>
+<circle cx="918" cy="132" r="10" class="d-badge"/>
+<text x="918" y="136" text-anchor="middle" class="t-badge">A</text>
+<text x="940" y="136" class="t-s2">Way into triage</text>
+<circle cx="1078" cy="132" r="10" class="d-badge"/>
+<text x="1078" y="136" text-anchor="middle" class="t-badge">1</text>
+<text x="1100" y="136" class="t-s2">Step order</text>
+<rect x="16" y="32" width="320" height="150" rx="10" class="d-panel"/>
+<text x="30" y="54" class="t-h">Sources</text>
+<rect x="28" y="66" width="140" height="102" rx="7" class="d-box"/>
+<text x="40" y="112" class="t-h">Splunk alerts</text>
+<text x="40" y="129" class="t-s">sync-failure alerts</text>
+<path d="M180,69 V165 A72.0,7 0 0 0 324,165 V69 A72.0,7 0 0 0 180,69 Z" class="d-box"/>
+<ellipse cx="252.0" cy="69" rx="72.0" ry="7" class="d-box"/>
+<text x="192" y="99" class="t-h">Audit tables</text>
+<text x="192" y="116" class="t-s">database</text>
+<text x="192" y="136" class="t-s2">account no. / ECN /</text>
+<text x="192" y="152" class="t-s2">third-party ID</text>
+<rect x="376" y="66" width="210" height="80" rx="8" class="d-box"/>
+<circle cx="394" cy="88" r="10" class="d-badge"/>
+<text x="394" y="92" text-anchor="middle" class="t-badge">A</text>
+<text x="410" y="92" class="t-h">Background service</text>
+<text x="390" y="114" class="t-s">LLM worker</text>
+<text x="390" y="130" class="t-s">triages every new issue</text>
+<rect x="16" y="214" width="914" height="150" rx="10" class="d-panel"/>
+<text x="32" y="238"><tspan class="t-h">LLM triage</tspan><tspan class="t-s" dx="6">· same steps for both ways in</tspan></text>
+<rect x="32" y="254" width="200" height="92" rx="8" class="d-box"/>
+<circle cx="50" cy="274" r="10" class="d-badge"/>
+<text x="50" y="278" text-anchor="middle" class="t-badge">1</text>
+<text x="66" y="278" class="t-h">Classify</text>
+<text x="46" y="300" class="t-s">finds the L2 and the L1</text>
+<text x="46" y="316" class="t-s">component at fault</text>
+<text x="46" y="336" class="t-s2">Today: Loan Boarding</text>
+<rect x="262" y="254" width="400" height="92" rx="8" class="d-box"/>
+<circle cx="280" cy="274" r="10" class="d-badge"/>
+<text x="280" y="278" text-anchor="middle" class="t-badge">2</text>
+<text x="296" y="278" class="t-h">Triage by runbook</text>
+<text x="276" y="300" class="t-s">follows that component’s runbook</text>
+<text x="276" y="316" class="t-s">and gathers evidence at each step</text>
+<rect x="692" y="254" width="222" height="92" rx="8" class="d-box"/>
+<circle cx="710" cy="274" r="10" class="d-badge"/>
+<text x="710" y="278" text-anchor="middle" class="t-badge">3</text>
+<text x="726" y="278" class="t-h">Build actions</text>
+<text x="706" y="300" class="t-s">remediation actions</text>
+<text x="706" y="316" class="t-s">per triage record</text>
+<path d="M32,401 V467 A100.0,7 0 0 0 232,467 V401 A100.0,7 0 0 0 32,401 Z" class="d-box"/>
+<ellipse cx="132.0" cy="401" rx="100.0" ry="7" class="d-box"/>
+<text x="46" y="425" class="t-h">Vector DB</text>
+<text x="46" y="442" class="t-s">ChromaDB today</text>
+<text x="46" y="458" class="t-sf">Tachyon in future</text>
+<rect x="262" y="398" width="120" height="76" rx="7" class="d-box"/>
+<text x="274" y="421" class="t-h">Runbooks</text>
+<text x="274" y="438" class="t-s">Confluence</text>
+<text x="274" y="453" class="t-s">or prompt</text>
+<path d="M402,401 V467 A60.0,7 0 0 0 522,467 V401 A60.0,7 0 0 0 402,401 Z" class="d-box"/>
+<ellipse cx="462.0" cy="401" rx="60.0" ry="7" class="d-box"/>
+<text x="414" y="438" class="t-h">Audit tables</text>
+<path d="M542,401 V467 A60.0,7 0 0 0 662,467 V401 A60.0,7 0 0 0 542,401 Z" class="d-fut"/>
+<ellipse cx="602.0" cy="401" rx="60.0" ry="7" class="d-fut"/>
+<text x="554" y="425" class="t-hf">Splunk logs</text>
+<text x="554" y="441" class="t-sf">LLM-written</text>
+<text x="554" y="456" class="t-sf">queries</text>
+<path d="M986,221 V401 A119.0,7 0 0 0 1224,401 V221 A119.0,7 0 0 0 986,221 Z" class="d-box"/>
+<ellipse cx="1105.0" cy="221" rx="119.0" ry="7" class="d-box"/>
+<text x="1002" y="252" class="t-h">Triage records</text>
+<text x="1002" y="269" class="t-s">MongoDB · written by both ways in</text>
+<text x="1002" y="292" class="t-k">REMEDIATION ACTIONS</text>
+<rect x="1002" y="303" width="6" height="6" rx="1" class="d-bullet"/>
+<text x="1014" y="310" class="t-s2">Mongo reprocess script</text>
+<rect x="1002" y="320" width="6" height="6" rx="1" class="d-bullet"/>
+<text x="1014" y="327" class="t-s2">Alfa update script (Python)</text>
+<rect x="1002" y="337" width="6" height="6" rx="1" class="d-bullet"/>
+<text x="1014" y="344" class="t-s2">Jira defect</text>
+<rect x="1002" y="354" width="6" height="6" rx="1" class="d-bullet-f"/>
+<text x="1014" y="361" class="t-sf">ServiceNow incident · future</text>
+<rect x="1002" y="371" width="6" height="6" rx="1" class="d-bullet-f"/>
+<text x="1014" y="378" class="t-sf">Alfa case · future</text>
+<rect x="16" y="506" width="1208" height="212" rx="10" class="d-panel"/>
+<text x="32" y="530"><tspan class="t-h2">Triage &amp; Recon Assistant</tspan><tspan class="t-s" dx="6">· web UI</tspan></text>
+<rect x="32" y="542" width="264" height="98" rx="8" class="d-box"/>
+<text x="46" y="566" class="t-h">Reconciliation</text>
+<text x="46" y="588" class="t-s">reconciliation options for each L2</text>
+<rect x="316" y="542" width="524" height="98" rx="8" class="d-box"/>
+<circle cx="334" cy="562" r="10" class="d-badge"/>
+<text x="334" y="566" text-anchor="middle" class="t-badge">B</text>
+<text x="350" y="566" class="t-h">Triage chatbot</text>
+<text x="330" y="588" class="t-s">LLM · triages on a user’s request</text>
+<text x="330" y="606" class="t-s2">For each L2 · today only Auto Loan Admin</text>
+<rect x="860" y="542" width="348" height="98" rx="8" class="d-box"/>
+<text x="874" y="566" class="t-h">Triage records</text>
+<text x="874" y="588" class="t-s">records from both ways into triage,</text>
+<text x="874" y="604" class="t-s">with their actions and test results</text>
+<rect x="316" y="650" width="892" height="60" rx="8" class="d-sec"/>
+<rect x="328" y="656" width="160" height="48" rx="8" class="d-human"/>
+<circle cx="346" cy="681" r="10" class="d-badge"/>
+<text x="346" y="685" text-anchor="middle" class="t-badge">4</text>
+<text x="362" y="676" class="t-h">Test in lower env</text>
+<text x="362" y="693" class="t-s">pick action + env</text>
+<rect x="500" y="656" width="148" height="48" rx="8" class="d-fut"/>
+<circle cx="518" cy="681" r="10" class="d-badge-f"/>
+<text x="518" y="685" text-anchor="middle" class="t-badge-f">5</text>
+<text x="534" y="676" class="t-hf">Deploy to prod</text>
+<text x="534" y="693" class="t-sf">after a passed test</text>
+<text x="668" y="685" class="t-s">On every triage record, in the chatbot and in Triage records</text>
+<rect x="32" y="776" width="264" height="46" rx="8" class="d-box"/>
+<text x="46" y="796" class="t-h">Recon apps</text>
+<text x="46" y="812" class="t-s">one per L2</text>
+<rect x="380" y="766" width="230" height="66" rx="8" class="d-box"/>
+<text x="394" y="790" class="t-h">Remediation API</text>
+<text x="394" y="807" class="t-s">validates, queues tests</text>
+<text x="394" y="823" class="t-sf">requests deploys</text>
+<path d="M680,770 V828 A62.0,7 0 0 0 804,828 V770 A62.0,7 0 0 0 680,770 Z" class="d-box"/>
+<ellipse cx="742.0" cy="770" rx="62.0" ry="7" class="d-box"/>
+<text x="694" y="802" class="t-h">Test runs</text>
+<text x="694" y="818" class="t-s">MongoDB · results</text>
+<rect x="890" y="769" width="114" height="60" rx="8" class="d-box"/>
+<text x="904" y="795" class="t-h">Test runner</text>
+<text x="904" y="812" class="t-s">routes by action</text>
+<rect x="1076" y="730" width="148" height="220" rx="10" class="d-panel"/>
+<text x="1088" y="752" class="t-h">Lower environment</text>
+<text x="1088" y="767" class="t-s">e.g. UAT</text>
+<rect x="1088" y="777" width="124" height="44" rx="7" class="d-box"/>
+<text x="1100" y="796" class="t-h">MongoDB</text>
+<text x="1100" y="812" class="t-s">reprocess script</text>
+<rect x="1088" y="829" width="124" height="44" rx="7" class="d-box"/>
+<text x="1100" y="848" class="t-h">Alfa</text>
+<text x="1100" y="864" class="t-s">update script</text>
+<rect x="1088" y="881" width="124" height="58" rx="7" class="d-fut"/>
+<text x="1100" y="900" class="t-hf">Tickets</text>
+<text x="1100" y="916" class="t-sf">Jira, ServiceNow</text>
+<text x="1100" y="931" class="t-sf">and Alfa case</text>
+<rect x="380" y="876" width="140" height="56" rx="8" class="d-fut"/>
+<text x="394" y="900" class="t-hf">IDP portal</text>
+<text x="394" y="917" class="t-sf">raises the change</text>
+<rect x="590" y="876" width="150" height="56" rx="8" class="d-fut"/>
+<text x="604" y="897" class="t-hf">ServiceNow change</text>
+<text x="604" y="913" class="t-sf">gameplan + test</text>
+<text x="604" y="927" class="t-sf">script attached</text>
+<rect x="810" y="876" width="130" height="56" rx="8" class="d-fut"/>
+<text x="824" y="897" class="t-hf">Production</text>
+<text x="824" y="913" class="t-sf">applies the fix</text>
+<text x="824" y="927" class="t-sf">under the change</text>
+<path d="M336,106 H376" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="356" y="98" class="t-e" text-anchor="middle">pulls</text>
+<path d="M481,146 V214" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="487" y="186" class="t-e">runs triage</text>
+<path d="M232,300 H262" class="d-edge" marker-end="url(#hld-he)"/>
+<path d="M662,300 H692" class="d-edge" marker-end="url(#hld-he)"/>
+<path d="M914,300 H986" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="950" y="292" class="t-e" text-anchor="middle">writes</text>
+<path d="M132,346 V394" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="138" y="382" class="t-e">vector search</text>
+<path d="M322,346 V398" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="328" y="382" class="t-e">reads</text>
+<path d="M462,346 V394" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="468" y="382" class="t-e">queries</text>
+<path d="M602,346 V394" class="d-edge-f" marker-end="url(#hld-he-f)"/>
+<text x="608" y="382" class="t-ef">searches</text>
+<path d="M720,542 V364" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="714" y="494" class="t-e" text-anchor="end">if new, runs triage</text>
+<path d="M800,542 V440 H1000 V405" class="d-edge" marker-start="url(#hld-hs)" marker-end="url(#hld-he)"/>
+<text x="810" y="432" class="t-e">looks up first, returns if found</text>
+<path d="M1105,408 V542" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="1111" y="494" class="t-e">reads</text>
+<path d="M164,640 V776" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="170" y="752" class="t-e">opens in a new tab</text>
+<path d="M408,704 V766" class="d-edge" marker-start="url(#hld-hs)" marker-end="url(#hld-he)"/>
+<text x="402" y="738" class="t-e" text-anchor="end">submit test</text>
+<text x="402" y="752" class="t-e" text-anchor="end">results</text>
+<path d="M574,704 V766" class="d-edge-f" marker-end="url(#hld-he-f)"/>
+<text x="580" y="745" class="t-ef">deploy request</text>
+<path d="M610,799 H680" class="d-edge" marker-start="url(#hld-hs)" marker-end="url(#hld-he)"/>
+<text x="645" y="791" class="t-e" text-anchor="middle">queues run</text>
+<text x="645" y="815" class="t-e" text-anchor="middle">reads result</text>
+<path d="M804,799 H890" class="d-edge" marker-start="url(#hld-hs)" marker-end="url(#hld-he)"/>
+<text x="847" y="791" class="t-e" text-anchor="middle">claims run</text>
+<text x="847" y="815" class="t-e" text-anchor="middle">saves checks</text>
+<path d="M1004,799 H1088" class="d-edge" marker-end="url(#hld-he)"/>
+<text x="1040" y="791" class="t-e" text-anchor="middle">applies</text>
+<text x="1040" y="815" class="t-e" text-anchor="middle">checks</text>
+<path d="M990,829 V851 H1088" class="d-edge" marker-end="url(#hld-he)"/>
+<path d="M966,829 V910 H1088" class="d-edge-f" marker-end="url(#hld-he-f)"/>
+<path d="M450,832 V876" class="d-edge-f" marker-end="url(#hld-he-f)"/>
+<text x="456" y="858" class="t-ef">if the test passed</text>
+<path d="M520,904 H590" class="d-edge-f" marker-end="url(#hld-he-f)"/>
+<text x="555" y="896" class="t-ef" text-anchor="middle">creates</text>
+<path d="M740,904 H810" class="d-edge-f" marker-end="url(#hld-he-f)"/>
+<text x="775" y="896" class="t-ef" text-anchor="middle">deploys</text>
+</svg>
+    </div>
+    <p class="hint">Swipe sideways to see the whole diagram.</p>
+    <figcaption>The background service and the chatbot run the same LLM triage and save to one MongoDB triage records store, and the chatbot answers from an existing record when there is one. Every triage record can be tested in a lower environment from Triage records or the chatbot, and in future deployed to production through a ServiceNow change.</figcaption>
+  </figure>
+
+  <section aria-labelledby="steps-h">
+    <h2 id="steps-h">Step by step</h2>
+    <p class="sub">Letters mark the two ways into triage, and numbers match the diagram. Lines marked Future are planned.</p>
+    <ol class="steps">
+      <li><span class="num">A</span><div><h3>Background service <span class="chip">Current</span></h3><p>It pulls Splunk alerts and sync-failure records from the audit tables in the database, each keyed by account number, ECN or third-party ID, and triages every new issue.</p></div></li>
+      <li><span class="num">B</span><div><h3>Triage chatbot <span class="chip">Current</span></h3><p>A user asks about an issue in the web UI’s chatbot, which serves each L2 and today covers only Auto Loan Admin. It first looks for an existing triage record and answers from it. If the issue is new, it runs the triage and saves the result.</p></div></li>
+      <li><span class="num">1</span><div><h3>Classify <span class="chip">Current</span></h3><p>The LLM matches the issue to an L2 and the L1 component at fault with a vector DB search, which runs on ChromaDB today. Today that is Auto Loan Admin › Loan Boarding.</p><p class="fut"><b>Future:</b> Tachyon as the vector DB, more L1s such as Statement, and the Customer Communication and Recovery L2s.</p></div></li>
+      <li><span class="num">2</span><div><h3>Triage by runbook <span class="chip">Current</span></h3><p>It follows that component’s runbook, kept in Confluence or as a prompt, and queries the audit tables at each step.</p><p class="fut"><b>Future:</b> Splunk log searches with queries the LLM writes.</p></div></li>
+      <li><span class="num">3</span><div><h3>Build remediation actions <span class="chip">Current</span></h3><p>It saves the triage record and its remediation actions to the one MongoDB collection that both ways in share. Today an action can be a Mongo reprocess script, an Alfa update script in Python or a Jira defect.</p><p class="fut"><b>Future:</b> ServiceNow incidents and Alfa cases.</p></div></li>
+      <li><span class="num">4</span><div><h3>Test in a lower environment <span class="chip">Current</span></h3><p>On any triage record, in Triage records or the chatbot, a person picks an action and an environment such as UAT and submits. The remediation API queues a run, the test runner applies the action there and checks the result, and the outcome shows on the record. Today it tests Mongo reprocess scripts and Alfa update scripts.</p><p class="fut"><b>Future:</b> testers for Jira defects, ServiceNow incidents and Alfa cases.</p></div></li>
+      <li><span class="num f">5</span><div><h3>Deploy to prod <span class="chip f">Future</span></h3><p>From the same record, in either feature, a person deploys once a test has passed. The remediation API raises a ServiceNow change through the IDP portal with the gameplan and test script attached, and the fix goes to production under that change.</p></div></li>
+    </ol>
+  </section>
+
+  <div class="ref">
+    <section aria-labelledby="cov-h">
+      <h2 id="cov-h">Coverage</h2>
+      <p class="sub">What each feature of the web UI handles now and next.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Area</th><th scope="col">Current</th><th scope="col">Future</th></tr></thead>
+          <tbody>
+            <tr><td>Reconciliation</td><td>Reconciliation options for each L2, each opening its own app in a new tab</td><td class="none">—</td></tr>
+            <tr><td>Triage chatbot</td><td>Auto Loan Admin</td><td class="f">Each other L2</td></tr>
+            <tr><td>Triage · Auto Loan Admin</td><td>Loan Boarding</td><td class="f">Statement and other L1s</td></tr>
+            <tr><td>Triage · Customer Communication</td><td class="none">Not yet</td><td class="f">Triage for this L2</td></tr>
+            <tr><td>Triage · Recovery</td><td class="none">Not yet</td><td class="f">Triage for this L2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="act-h">
+      <h2 id="act-h">Remediation actions</h2>
+      <p class="sub">Which actions triage creates today, and which the test runner can test yet.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Action</th><th scope="col">Acts on</th><th scope="col">Created</th><th scope="col">Lower-env test</th></tr></thead>
+          <tbody>
+            <tr><td>Mongo reprocess script<code>REPROCESS_CANDIDATE</code></td><td>MongoDB <code class="inline">customerevent</code></td><td><span class="chip">Current</span></td><td><span class="chip">Current</span></td></tr>
+            <tr><td>Alfa update script (Python)</td><td>Alfa</td><td><span class="chip">Current</span></td><td><span class="chip">Current</span></td></tr>
+            <tr><td>Jira defect</td><td>Jira</td><td><span class="chip">Current</span></td><td><span class="chip f">Future</span></td></tr>
+            <tr><td>ServiceNow incident<code>RAISE_SERVICENOW_INCIDENT</code></td><td>ServiceNow</td><td><span class="chip f">Future</span></td><td><span class="chip f">Future</span></td></tr>
+            <tr><td>Alfa case<code>CREATE_ALFA_CASE</code></td><td>Alfa</td><td><span class="chip f">Future</span></td><td><span class="chip f">Future</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Deploying is planned for every action after a passed test: the remediation API raises a ServiceNow change through the IDP portal with the gameplan and test script attached, then the fix goes to production under that change.</p>
+    </section>
+  </div>
+</main>
+
+</body></html>
